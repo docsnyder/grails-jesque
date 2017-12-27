@@ -6,7 +6,6 @@ grails:
         pruneWorkersOnStartup: true
         createWorkersOnStartup: true
         schedulerThreadActive: true
-        delayedJobThreadActive: true
         startPaused: false
         nextQueueStrategy: DRAIN_WHILE_MESSAGES_EXISTS
 
