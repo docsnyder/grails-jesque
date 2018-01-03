@@ -72,6 +72,7 @@ grails:
         host: localhost
     jesque:
         enabled: true
+        failedItemLimit: 1000
         pruneWorkersOnStartup: true
         createWorkersOnStartup: true
         schedulerThreadActive: true

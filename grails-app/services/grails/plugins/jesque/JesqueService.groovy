@@ -165,6 +165,11 @@ class JesqueService implements DisposableBean {
             }
         }
 
+        def failedItemLimit = grailsApplication.config.grails.jesque.failedItemLimit
+        if (failedItemLimit && failedItemLimit.toString().isNumber()) {
+            worker.setFailQueueStrategy(new LimitFailedItemsFailQueueStrategy(jesqueConfig.namespace, failedItemLimit as int))
+        }
+
         if (exceptionHandler)
             worker.exceptionHandler = exceptionHandler
 
