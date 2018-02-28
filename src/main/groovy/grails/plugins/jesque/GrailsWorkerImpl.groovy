@@ -4,6 +4,7 @@ import grails.core.GrailsApplication
 import groovy.util.logging.Slf4j
 import net.greghaines.jesque.Config
 import net.greghaines.jesque.Job
+import net.greghaines.jesque.worker.NextQueueStrategy
 import net.greghaines.jesque.worker.WorkerAware
 import net.greghaines.jesque.worker.WorkerPoolImpl
 import redis.clients.jedis.Jedis
@@ -19,8 +20,10 @@ class GrailsWorkerImpl extends WorkerPoolImpl {
     GrailsWorkerImpl(GrailsApplication grailsApplication,
                      final Config config,
                      final Pool<Jedis> jedisPool,
-                     final Collection<String> queues, final Map<String, ? extends Class> jobTypes) {
-        super(config, queues, new GrailsJesqueJobFactory(jobTypes, grailsApplication), jedisPool)
+                     final Collection<String> queues,
+                     final Map<String, ? extends Class> jobTypes,
+                     final NextQueueStrategy nextQueueStrategy) {
+        super(config, queues, new GrailsJesqueJobFactory(jobTypes, grailsApplication), jedisPool, nextQueueStrategy)
 
         this.grailsApplication = grailsApplication
     }

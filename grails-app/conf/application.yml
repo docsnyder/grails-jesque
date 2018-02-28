@@ -7,6 +7,7 @@ grails:
         schedulerThreadActive: true
         delayedJobThreadActive: true
         startPaused: false
+        nextQueueStrategy: DRAIN_WHILE_MESSAGES_EXISTS
 
 environments:
     test:

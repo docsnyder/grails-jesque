@@ -142,7 +142,17 @@ class JesqueService implements DisposableBean {
             }
         }
 
-        Worker worker = (GrailsWorkerImpl) workerClass.newInstance(grailsApplication, jesqueConfig, redisPool, queues, jobTypes)
+        def nextQueueStrategy = NextQueueStrategy.DRAIN_WHILE_MESSAGES_EXISTS
+        def customNextQueueStrategy = grailsApplication.config.grails.jesque.nextQueueStrategy
+        if (customNextQueueStrategy && customNextQueueStrategy instanceof String) {
+            try {
+                nextQueueStrategy = NextQueueStrategy.valueOf(customNextQueueStrategy)
+            } catch (Exception ignore) {
+                log.warn("Unknown nextQueueStrategy specified: $customNextQueueStrategy")
+            }
+        }
+
+        Worker worker = (GrailsWorkerImpl) workerClass.newInstance(grailsApplication, jesqueConfig, redisPool, allQueues, jobTypes, nextQueueStrategy)
 
         def customListenerClass = grailsApplication.config.grails.jesque.custom.listener.clazz
         if (customListenerClass) {
