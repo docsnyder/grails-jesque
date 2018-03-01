@@ -13,10 +13,12 @@ import net.greghaines.jesque.meta.WorkerInfo
 import net.greghaines.jesque.meta.dao.WorkerInfoDAO
 import net.greghaines.jesque.worker.*
 import org.joda.time.DateTime
-import org.springframework.beans.factory.DisposableBean
+import org.springframework.context.ApplicationListener
+import org.springframework.context.event.ContextClosedEvent
+import org.springframework.core.Ordered
 
 @Slf4j
-class JesqueService implements DisposableBean {
+class JesqueService implements ApplicationListener<ContextClosedEvent>, Ordered {
 
     static final int DEFAULT_WORKER_POOL_SIZE = 3
 
@@ -207,17 +209,30 @@ class JesqueService implements DisposableBean {
         worker
     }
 
+    @Override
+    int getOrder() {
+        // ensure that workers are stopped as early as possible during app shutdown
+        return HIGHEST_PRECEDENCE
+    }
+
+    @Override
+    void onApplicationEvent(ContextClosedEvent event) {
+        this.stopAllWorkers()
+    }
+
     void stopAllWorkers() {
-        log.info "Stopping ${workers.size()} jesque workers"
+        log.info "stopping ${workers.size()} jesque workers"
 
         List<Worker> workersToRemove = workers.collect { it }
+        workersToRemove*.end(false)
+
         workersToRemove.each { Worker worker ->
             try {
-                log.debug "Stopping worker processing queues: ${worker.queues}"
+                log.info "stopping worker $worker"
                 worker.end(true)
-                worker.join(5000)
+                worker.join(10000)
             } catch (Exception exception) {
-                log.error "Exception ending jesque worker", exception
+                log.error "stopping jesque worker failed", exception
             }
         }
     }
@@ -275,13 +290,9 @@ class JesqueService implements DisposableBean {
         }
     }
 
-    public void removeWorkerFromLifecycleTracking(Worker worker) {
+    void removeWorkerFromLifecycleTracking(Worker worker) {
         log.debug "Removing worker ${worker.name} from lifecycle tracking"
         workers.remove(worker)
-    }
-
-    void destroy() throws Exception {
-        this.stopAllWorkers()
     }
 
     void pauseAllWorkersOnThisNode() {
