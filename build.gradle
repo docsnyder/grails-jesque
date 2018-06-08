@@ -16,7 +16,7 @@ plugins {
 	id "com.jfrog.bintray" version "1.2"
 }
 
-version "1.2.1"
+version "1.3.0-UBERALL"
 group "org.grails.plugins"
 
 apply plugin: 'io.spring.dependency-management'
@@ -42,6 +42,7 @@ targetCompatibility = 1.7
 repositories {
 	mavenLocal()
 	mavenCentral()
+	maven { url "http://dl.bintray.com/uberall/maven" }
 	maven { url "https://repo.grails.org/grails/core" }
 }
 
@@ -62,8 +63,8 @@ dependencies {
 	provided "org.grails:grails-dependencies"
 	provided 'javax.servlet:javax.servlet-api:3.1.0'
 
-	compile('org.grails.plugins:redis:2.0.4')
-	compile('net.greghaines:jesque:2.1.4-UBERALL')
+	compile('org.grails.plugins:redis:2.0.5')
+	compile('net.greghaines:jesque:2.1.5-UBERALL')
 	compile('redis.clients:jedis:2.9.0')
 	compile('joda-time:joda-time:2.5')
 
@@ -81,13 +82,13 @@ bintray {
 	key = System.getenv("BINTRAY_KEY") ?: project.hasProperty("bintrayKey") ? project.bintrayKey : ''
 	publications = ['maven']
 	pkg {
-		repo = 'grails-plugins'
-		userOrg = 'ctoestreich'
+		repo = 'plugins'
+		userOrg = 'uberall'
 		name = "jesque"
 		desc = "Grails Jesque Plugin"
 		websiteUrl = "http://grails.org/plugin/grails-jesque"
-		issueTrackerUrl = "https://github.com/Grails-Plugin-Consortium/grails-jesque/issues"
-		vcsUrl = "https://github.com/Grails-Plugin-Consortium/grails-jesque"
+		issueTrackerUrl = "https://github.com/uberall/grails-jesque/issues"
+		vcsUrl = "https://github.com/uberall/grails-jesque"
 		licenses = ['Apache-2.0']
 		publicDownloadNumbers = true
 	}

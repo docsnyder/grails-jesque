@@ -173,53 +173,25 @@ Roadmap
 * Dynamic wake time of delayed jobs thread to reduce polling
 
 Release Notes
-=============
+----
 
-* 0.2.0 - released 2011-10-17
-    * First publicly announced version
-* 0.3.0 - released 2012-02-03
-    * First implementation of scheduler
-* 0.4.0 - released 2012-06-06
-    * Gracefully shutdown threads
-    * Handle changes to scheduled jobs during development
-    * Upgrade to Jedis 2.1.0 (Note, this is binary incompatible with Jedis 2.0.0, Grails Jesque < 0.4.0 will not run with Jedis 2.1.0 and >= 0.4.0 must run with Jedis >= 2.1.0)
-    * Change artefact name from "Job" to "JesqueJob" to not clash with other grails plugins (e.g. quartz) that use an artefact name of "Job" (issue #14)
-* 0.5.0 - released 2012-11-20
-    * Add delayed job queue implementation
-    * Ability to use grailsConfiguration in triggers closure
-* 0.5.1 - released 2012-11-27
-    * Add some logging to the exception handler to track down shutdown issues
-    * Add ability to prevent jesque from starting via config ([issue #22](https://github.com/michaelcameron/grails-jesque/issues/23))
-* 0.6.0 - released 2013-03-05
-    * Upgrade to Jesque 1.3.1
-    * Fix edge case with errors after calling jedis.multi() but before calling trans.exec() ([issue #26](https://github.com/michaelcameron/grails-jesque/issues/26))
-* 0.6.1 - release 2013-03-22
-    * Use Jesque's admin functionality to allow start/stop/pause of workers in a cluster
-* 0.6.2 - release 2013-06-13
-    * Add ability to specify Redis DB
-* 0.8.0 - TBD - 0.8.0-SNAPSHOT version available now
-    * Added priorityEnqueue methods to JesqueService
-    * Added ability to define a custom WorkerListener
-    * Added ability to define a custom WorkerImpl
-    * Added ability to specify a custom job exception handler
-    * Updated to grails version 2.3.8
-    * Move tests outside of main project
-    * Remove test and hibernate dependencies
-    * Updated dependencies
-* 1.0.0 - Grails 3.x
-    * Some features have not been ported over yet such as custom Worker and Listener
-    * Design was changed to use list based jobTypes instead of Map for simplicity in YAML
-* 1.0.1 - Bug fix for NPE
-* 1.0.6 - Background the starting of the jobs to speed up booting
-* 1.1.0 - Adding sentinel support
-* 1.1.2 - Bug fix for wiring jobs
-* 1.1.4 - Bug fix for worker persistence context
-* 1.1.5 - Fixing sentinel support
-* 1.1.6 - Fixing sentinel support (again)
-* 1.1.9 - Closing pooled resource connection
-    * Rewrite of the worker impl
-* 1.2.0 - Fixing exception handling in Grails Worker 
-* 1.2.1 - Using close instead of return to pool 
+Note: only changes made by uberall are listed here.
+
+* 1.3.0-UBERALL
+    * proper pooling by using jesque classes
+    * allow listeners to implement GrailsApplicationAware
+    * expose `nextQueueStrategy` setting
+    * expose `failedItemLimit` setting
+    * use delayed job feature provided by jesque
+    * refurbished worker listeners (don't flush if job failed)
+    * fix autoFlush bug (allows autoFlush to be set to false)
+    * properly close persistenceInterceptor when flush failed
+    * synchronous init to prevent race-conditions during app start
+    * stop workers as early as possible during application shutdown sequence
+    * add ability to prune orphaned scheduled jobs on startup (via `pruneOrphanedScheduledJobsOnStartup`)
+    * add ability to remove delayed jobs
+    * only stop scheduler thread if it has been started
+    * log args of executing job
 
 License
 -------
