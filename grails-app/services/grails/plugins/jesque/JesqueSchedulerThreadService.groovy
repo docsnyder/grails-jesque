@@ -53,6 +53,10 @@ class JesqueSchedulerThreadService implements Runnable, DisposableBean {
     }
 
     public void stop(Integer waitMilliseconds = IDLE_WAIT_TIME + 2000, Boolean interrupt = false) {
+        if (!schedulerThread) {
+            return
+        }
+
         log.info "Stopping the jesque scheduler thread"
         threadState.set(JesqueScheduleThreadState.Stopped)
         try{
