@@ -116,6 +116,19 @@ class JesqueService implements ApplicationListener<ContextClosedEvent>, Ordered 
     }
 
 
+    void removeDelayed(String queueName, Class jobClass, def args) {
+        removeDelayed(queueName, jobClass.simpleName, args)
+    }
+
+    void removeDelayed(String queueName, String jobName, def args) {
+        removeDelayed(queueName, new Job(jobName, args))
+    }
+
+    void removeDelayed(String queueName, Job job) {
+        jesqueClient.removeDelayedEnqueue(queueName, job)
+    }
+
+
     Worker startWorker(String queueName, String jobName, Class jobClass, ExceptionHandler exceptionHandler = null,
                        boolean paused = false) {
         startWorker([queueName], [(jobName): jobClass], exceptionHandler, paused)
