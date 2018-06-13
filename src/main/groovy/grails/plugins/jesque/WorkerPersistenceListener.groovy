@@ -2,11 +2,13 @@ package grails.plugins.jesque
 
 import grails.persistence.support.PersistenceContextInterceptor
 import groovy.transform.CompileStatic
+import groovy.util.logging.Slf4j
 import net.greghaines.jesque.Job
 import net.greghaines.jesque.worker.Worker
 import net.greghaines.jesque.worker.WorkerEvent
 import net.greghaines.jesque.worker.WorkerListener
 
+@Slf4j
 @CompileStatic
 class WorkerPersistenceListener implements WorkerListener {
 
@@ -37,7 +39,11 @@ class WorkerPersistenceListener implements WorkerListener {
 
     private void flushSession() {
         if (!initiated) return
-        persistenceInterceptor.flush()
+        try {
+            persistenceInterceptor.flush()
+        } catch (Exception e) {
+            log.error "flushing persistence context failed", e
+        }
     }
 
     @Override
