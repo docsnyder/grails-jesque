@@ -27,7 +27,7 @@ class GrailsWorkerImpl extends WorkerPoolImpl {
 
     @Override
     protected Object execute(final Job job, final String curQueue, final Object instance) throws Exception {
-        log.debug "Executing job ${job.className} from queue $curQueue"
+        log.debug "Executing job ${job.className} with args $job.args from queue $curQueue"
         if (instance instanceof WorkerAware) {
             ((WorkerAware) instance).setWorker(this)
         }
