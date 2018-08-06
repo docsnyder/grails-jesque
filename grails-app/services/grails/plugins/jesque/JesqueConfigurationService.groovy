@@ -78,9 +78,10 @@ class JesqueConfigurationService {
 		}
 	}
 
-	void scheduleJob(GrailsJesqueJobClass jobClass) {
+	List<String> scheduleJob(GrailsJesqueJobClass jobClass) {
 		log.info("Scheduling ${jobClass.fullName}")
 
+		List scheduledJobNames = []
 		jobClass.triggers.each { key, trigger ->
 			String name = trigger.triggerAttributes[GrailsJesqueJobClassProperty.NAME]
 			String cronExpression = trigger.triggerAttributes[GrailsJesqueJobClassProperty.CRON_EXPRESSION]
@@ -90,7 +91,9 @@ class JesqueConfigurationService {
 			List jesqueJobArguments = trigger.triggerAttributes[GrailsJesqueJobClassProperty.JESQUE_JOB_ARGUMENTS] ?: []
 
 			jesqueSchedulerService.schedule(name, cronExpression, timeZone, queue, jesqueJobName, jesqueJobArguments)
+			scheduledJobNames.add(name)
 		}
+		scheduledJobNames
 	}
 
 	void deleteScheduleJob(GrailsJesqueJobClass jobClass) {

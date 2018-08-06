@@ -48,5 +48,11 @@ class ScheduledJobDaoService {
             }
         } as List<ScheduledJob>
     }
-}
 
+    Set<String> getFromIndex() {
+        redisService.withRedis { Jedis redis ->
+            redis.smembers(ScheduledJob.JOB_INDEX)
+        } as Set<String>
+    }
+
+}

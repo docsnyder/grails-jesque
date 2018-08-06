@@ -2,12 +2,7 @@ package grails.jesque
 
 import grails.core.GrailsApplication
 import grails.plugins.Plugin
-import grails.plugins.jesque.GrailsJesqueJobClass
-import grails.plugins.jesque.JesqueConfigurationService
-import grails.plugins.jesque.JesqueJobArtefactHandler
-import grails.plugins.jesque.JesqueSchedulerThreadService
-import grails.plugins.jesque.JesqueService
-import grails.plugins.jesque.TriggersConfigBuilder
+import grails.plugins.jesque.*
 import groovy.util.logging.Slf4j
 import net.greghaines.jesque.Config
 import net.greghaines.jesque.ConfigBuilder
@@ -164,11 +159,26 @@ class JesqueGrailsPlugin extends Plugin {
             JesqueConfigurationService jesqueConfigurationService = applicationContext.jesqueConfigurationService
 
             log.info "Scheduling Jesque Jobs"
+            Set<String> scheduledJobNames = []
             grailsApplication.jesqueJobClasses.each { GrailsJesqueJobClass jobClass ->
-                jesqueConfigurationService.scheduleJob(jobClass)
+                scheduledJobNames.addAll(jesqueConfigurationService.scheduleJob(jobClass))
             }
 
             def jesqueConfigMap = grailsApplication.config.grails.jesque
+
+            if (jesqueConfigMap.pruneOrphanedScheduledJobsOnStartup) {
+                log.info "Pruning orphaned scheduled jobs"
+                ScheduledJobDaoService scheduledJobDaoService = applicationContext.scheduledJobDaoService
+                JesqueSchedulerService jesqueSchedulerService = applicationContext.jesqueSchedulerService
+                Set<String> scheduledJobsFromRedis = scheduledJobDaoService.getFromIndex()
+
+                scheduledJobsFromRedis.each { String scheduledJobName ->
+                    if (!scheduledJobNames.contains(scheduledJobName)) {
+                        log.info "Pruning orphaned scheduled job: $scheduledJobName"
+                        jesqueSchedulerService.deleteSchedule(scheduledJobName)
+                    }
+                }
+            }
 
             if (jesqueConfigMap.schedulerThreadActive) {
                 log.info "Launching jesque scheduler thread"

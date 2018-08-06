@@ -77,6 +77,7 @@ grails:
     jesque:
         enabled: true
         failedItemLimit: 1000
+        pruneOrphanedScheduledJobsOnStartup: true
         pruneWorkersOnStartup: true
         createWorkersOnStartup: true
         schedulerThreadActive: true
