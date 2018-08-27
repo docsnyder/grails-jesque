@@ -3,7 +3,10 @@ package grails.plugins.jesque
 import grails.core.GrailsApplication
 import grails.core.support.GrailsApplicationAware
 import grails.persistence.support.PersistenceContextInterceptor
+import groovy.transform.CompileDynamic
+import groovy.transform.CompileStatic
 import groovy.util.logging.Slf4j
+import net.greghaines.jesque.Config
 import net.greghaines.jesque.Job
 import net.greghaines.jesque.admin.Admin
 import net.greghaines.jesque.admin.AdminClient
@@ -16,20 +19,23 @@ import org.joda.time.DateTime
 import org.springframework.context.ApplicationListener
 import org.springframework.context.event.ContextClosedEvent
 import org.springframework.core.Ordered
+import redis.clients.jedis.Jedis
+import redis.clients.util.Pool
 
 @Slf4j
+@CompileStatic
 class JesqueService implements ApplicationListener<ContextClosedEvent>, Ordered {
 
     static final int DEFAULT_WORKER_POOL_SIZE = 3
 
     GrailsApplication grailsApplication
-    def jesqueConfig
+    Config jesqueConfig
     PersistenceContextInterceptor persistenceInterceptor
     Client jesqueClient
     WorkerInfoDAO workerInfoDao
-    List<Worker> workers = Collections.synchronizedList([])
+    List<Worker> workers = Collections.synchronizedList([] as List<Worker>)
     AdminClient jesqueAdminClient
-    def redisPool
+    Pool<Jedis> redisPool
 
     void enqueue(String queueName, Job job) {
         jesqueClient.enqueue(queueName, job)
@@ -55,26 +61,33 @@ class JesqueService implements ApplicationListener<ContextClosedEvent>, Ordered 
         jesqueClient.priorityEnqueue(queueName, job)
     }
 
-    void priorityEnqueue(String queueName, String jobName, def args) {
+    void priorityEnqueue(String queueName, String jobName, List args) {
         priorityEnqueue(queueName, new Job(jobName, args))
     }
 
-    void priorityEnqueue(String queueName, Class jobClazz, def args) {
+    void priorityEnqueue(String queueName, Class jobClazz, List args) {
+        priorityEnqueue(queueName, jobClazz.simpleName, args)
+    }
+
+    void priorityEnqueue(String queueName, String jobName, Object... args) {
+        priorityEnqueue(queueName, new Job(jobName, args))
+    }
+
+    void priorityEnqueue(String queueName, Class jobClazz, Object... args) {
         priorityEnqueue(queueName, jobClazz.simpleName, args)
     }
 
     void enqueueAt(DateTime dateTime, String queueName, Job job) {
-        try {
-            if (dateTime.millis < System.currentTimeMillis()) {
-                // in case we got called with DateTime.now(); prevents hitting the exception
-                jesqueClient.enqueue(queueName, job)
-            } else {
-                String delayedQueueName = "${queueName}Delayed"
-                jesqueClient.delayedEnqueue(delayedQueueName, job, dateTime.millis)
-            }
-        } catch (IllegalArgumentException ignore) {
-            // enqueueing the job in a regular queue in case jesque complained about the millis being not in the future
+        if (dateTime.millis < System.currentTimeMillis()) {
+            // prevent hitting the (expensive) IllegalArgumentException
             jesqueClient.enqueue(queueName, job)
+        } else {
+            try {
+                jesqueClient.delayedEnqueue("${queueName}Delayed", job, dateTime.millis)
+            } catch (IllegalArgumentException ignore) {
+                // fallback to the regular queue in case jesque complained ("future must be after current time")
+                jesqueClient.enqueue(queueName, job)
+            }
         }
     }
 
@@ -116,11 +129,19 @@ class JesqueService implements ApplicationListener<ContextClosedEvent>, Ordered 
     }
 
 
-    void removeDelayed(String queueName, Class jobClass, def args) {
+    void removeDelayed(String queueName, Class jobClass, List args) {
         removeDelayed(queueName, jobClass.simpleName, args)
     }
 
-    void removeDelayed(String queueName, String jobName, def args) {
+    void removeDelayed(String queueName, String jobName, List args) {
+        removeDelayed(queueName, new Job(jobName, args))
+    }
+
+    void removeDelayed(String queueName, Class jobClass, Object... args) {
+        removeDelayed(queueName, jobClass.simpleName, args)
+    }
+
+    void removeDelayed(String queueName, String jobName, Object... args) {
         removeDelayed(queueName, new Job(jobName, args))
     }
 
@@ -144,11 +165,12 @@ class JesqueService implements ApplicationListener<ContextClosedEvent>, Ordered 
         startWorker([queueName], jobTypes, exceptionHandler, paused)
     }
 
+    @CompileDynamic
     Worker startWorker(List<String> queues, Map<String, Class> jobTypes, ExceptionHandler exceptionHandler = null,
                        boolean paused = false) {
         // automatically support delayed queues
         def allQueues = queues.collectMany { queue ->
-            [queue, "${queue}Delayed".toString()]
+            [queue, getDelayedQueueName(queue)]
         }
 
         log.info "Starting worker processing queueus: ${allQueues}"
@@ -274,6 +296,7 @@ class JesqueService implements ApplicationListener<ContextClosedEvent>, Ordered 
         }
     }
 
+    @CompileDynamic
     void startWorkersFromConfig(ConfigObject jesqueConfigMap) {
         boolean startPaused = jesqueConfigMap.startPaused as boolean ?: false
 
@@ -362,6 +385,7 @@ class JesqueService implements ApplicationListener<ContextClosedEvent>, Ordered 
         return workerInfoDao.getActiveWorkerCount() == 0
     }
 
+    @CompileDynamic
     private addCustomListenerClass(Worker worker, customListenerClass) {
         if (customListenerClass instanceof String) {
             try {
@@ -382,4 +406,9 @@ class JesqueService implements ApplicationListener<ContextClosedEvent>, Ordered 
             log.warn("The specified custom listener class ${customListenerClass} does not implement WorkerListener. Ignoring it")
         }
     }
+
+    private static String getDelayedQueueName(String queueName) {
+        "${queueName}Delayed"
+    }
+
 }
