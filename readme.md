@@ -192,6 +192,9 @@ Note: only changes made by uberall are listed here.
     * add ability to remove delayed jobs
     * only stop scheduler thread if it has been started
     * log args of executing job
+* 1.3.1-UBERALL
+    * statically compile JesqueService and GrailsJesqueJobFactory
+    * update to jesque:2.1.6-UBERALL
 
 License
 -------
