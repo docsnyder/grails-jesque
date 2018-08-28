@@ -1,6 +1,7 @@
 package grails.plugins.jesque
 
 import grails.core.GrailsApplication
+import groovy.transform.CompileStatic
 import net.greghaines.jesque.Job
 import net.greghaines.jesque.utils.ReflectionUtils
 import net.greghaines.jesque.worker.MapBasedJobFactory
@@ -9,6 +10,7 @@ import net.greghaines.jesque.worker.UnpermittedJobException
 /**
  * Job Factory that knows how to materialize grails jobs.
  */
+@CompileStatic
 class GrailsJesqueJobFactory extends MapBasedJobFactory {
 
     GrailsApplication grailsApplication
