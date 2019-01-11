@@ -195,6 +195,12 @@ Note: only changes made by uberall are listed here.
 * 1.3.1-UBERALL
     * statically compile JesqueService and GrailsJesqueJobFactory
     * update to jesque:2.1.6-UBERALL
+* 1.3.2-UBERALL
+    * update to latest upstream jesque:2.1.3
+    * fix race-condition in scheduler thread
+    * improve startup logging
+    * check if configured jobType is a valid jesque job class
+    * don't catch exceptions when initialising jesque
 
 License
 -------
