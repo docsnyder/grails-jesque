@@ -153,55 +153,51 @@ class JesqueGrailsPlugin extends Plugin {
         if (!isJesqueEnabled(grailsApplication))
             return
 
-        try {
-            TriggersConfigBuilder.metaClass.getGrailsApplication = { -> grailsApplication }
+        TriggersConfigBuilder.metaClass.getGrailsApplication = { -> grailsApplication }
 
-            JesqueConfigurationService jesqueConfigurationService = applicationContext.jesqueConfigurationService
+        JesqueConfigurationService jesqueConfigurationService = applicationContext.jesqueConfigurationService
 
-            log.info "Scheduling Jesque Jobs"
-            Set<String> scheduledJobNames = []
-            grailsApplication.jesqueJobClasses.each { GrailsJesqueJobClass jobClass ->
-                scheduledJobNames.addAll(jesqueConfigurationService.scheduleJob(jobClass))
-            }
+        log.info "Scheduling Jesque Jobs"
+        Set<String> scheduledJobNames = []
+        grailsApplication.jesqueJobClasses.each { GrailsJesqueJobClass jobClass ->
+            scheduledJobNames.addAll(jesqueConfigurationService.scheduleJob(jobClass))
+        }
 
-            def jesqueConfigMap = grailsApplication.config.grails.jesque
+        def jesqueConfigMap = grailsApplication.config.grails.jesque
 
-            if (jesqueConfigMap.pruneOrphanedScheduledJobsOnStartup) {
-                log.info "Pruning orphaned scheduled jobs"
-                ScheduledJobDaoService scheduledJobDaoService = applicationContext.scheduledJobDaoService
-                JesqueSchedulerService jesqueSchedulerService = applicationContext.jesqueSchedulerService
-                Set<String> scheduledJobsFromRedis = scheduledJobDaoService.getFromIndex()
+        if (jesqueConfigMap.pruneOrphanedScheduledJobsOnStartup) {
+            log.info "Pruning orphaned scheduled jobs"
+            ScheduledJobDaoService scheduledJobDaoService = applicationContext.scheduledJobDaoService
+            JesqueSchedulerService jesqueSchedulerService = applicationContext.jesqueSchedulerService
+            Set<String> scheduledJobsFromRedis = scheduledJobDaoService.getFromIndex()
 
-                scheduledJobsFromRedis.each { String scheduledJobName ->
-                    if (!scheduledJobNames.contains(scheduledJobName)) {
-                        log.info "Pruning orphaned scheduled job: $scheduledJobName"
-                        jesqueSchedulerService.deleteSchedule(scheduledJobName)
-                    }
+            scheduledJobsFromRedis.each { String scheduledJobName ->
+                if (!scheduledJobNames.contains(scheduledJobName)) {
+                    log.info "Pruning orphaned scheduled job: $scheduledJobName"
+                    jesqueSchedulerService.deleteSchedule(scheduledJobName)
                 }
             }
+        }
 
-            if (jesqueConfigMap.schedulerThreadActive) {
-                log.info "Launching jesque scheduler thread"
-                JesqueSchedulerThreadService jesqueSchedulerThreadService = applicationContext.jesqueSchedulerThreadService
-                jesqueSchedulerThreadService.startSchedulerThread()
-            }
+        if (jesqueConfigMap.schedulerThreadActive) {
+            log.info "Launching jesque scheduler thread"
+            JesqueSchedulerThreadService jesqueSchedulerThreadService = applicationContext.jesqueSchedulerThreadService
+            jesqueSchedulerThreadService.startSchedulerThread()
+        }
 
-            JesqueService jesqueService = applicationContext.jesqueService
+        JesqueService jesqueService = applicationContext.jesqueService
 
-            jesqueConfigurationService.validateConfig(jesqueConfigMap as ConfigObject)
-            jesqueConfigurationService.mergeClassConfigurationIntoConfigMap(jesqueConfigMap as ConfigObject)
+        jesqueConfigurationService.validateConfig(jesqueConfigMap as ConfigObject)
+        jesqueConfigurationService.mergeClassConfigurationIntoConfigMap(jesqueConfigMap as ConfigObject)
 
-            if (jesqueConfigMap.pruneWorkersOnStartup) {
-                log.info "Pruning workers"
-                jesqueService.pruneWorkers()
-            }
+        if (jesqueConfigMap.pruneWorkersOnStartup) {
+            log.info "Pruning workers"
+            jesqueService.pruneWorkers()
+        }
 
-            if (jesqueConfigMap.createWorkersOnStartup) {
-                log.info "Creating workers"
-                jesqueService.startWorkersFromConfig(jesqueConfigMap as ConfigObject)
-            }
-        } catch (Exception e) {
-            log.error "Initializing Jesque failed", e
+        if (jesqueConfigMap.createWorkersOnStartup) {
+            log.info "Creating workers"
+            jesqueService.startWorkersFromConfig(jesqueConfigMap as ConfigObject)
         }
 
         applicationContext
