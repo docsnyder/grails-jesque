@@ -186,21 +186,18 @@ class JesqueGrailsPlugin extends Plugin {
                 jesqueSchedulerThreadService.startSchedulerThread()
             }
 
-            log.info "Starting jesque workers"
             JesqueService jesqueService = applicationContext.jesqueService
 
             jesqueConfigurationService.validateConfig(jesqueConfigMap as ConfigObject)
+            jesqueConfigurationService.mergeClassConfigurationIntoConfigMap(jesqueConfigMap as ConfigObject)
 
-            log.info "Found ${jesqueConfigMap.size()} workers"
             if (jesqueConfigMap.pruneWorkersOnStartup) {
                 log.info "Pruning workers"
                 jesqueService.pruneWorkers()
             }
 
-            jesqueConfigurationService.mergeClassConfigurationIntoConfigMap(jesqueConfigMap as ConfigObject)
             if (jesqueConfigMap.createWorkersOnStartup) {
                 log.info "Creating workers"
-
                 jesqueService.startWorkersFromConfig(jesqueConfigMap as ConfigObject)
             }
         } catch (Exception e) {

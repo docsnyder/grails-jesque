@@ -301,13 +301,12 @@ class JesqueService implements ApplicationListener<ContextClosedEvent>, Ordered 
         boolean startPaused = jesqueConfigMap.startPaused as boolean ?: false
 
         jesqueConfigMap?.workers?.keySet()?.each { String workerPoolName ->
-
-            log.info "Starting workers for pool $workerPoolName"
             def value = jesqueConfigMap?.workers[workerPoolName]
-
             def workers = value.workers ? value.workers.toInteger() : DEFAULT_WORKER_POOL_SIZE
             def queueNames = value.queueNames
             List<String> jobTypes = value.jobTypes
+
+            log.info "Starting $workers workers for pool $workerPoolName"
 
             if (!((queueNames instanceof String) || (queueNames instanceof List<String>)))
                 throw new Exception("Invalid queueNames for pool $workerPoolName, expecting must be a String or a List<String>.")
