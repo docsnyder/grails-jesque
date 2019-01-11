@@ -1,6 +1,5 @@
 package grails.plugins.jesque
 
-import grails.core.GrailsApplication
 import groovy.util.logging.Slf4j
 import net.greghaines.jesque.Config
 import net.greghaines.jesque.Job
@@ -15,17 +14,12 @@ import static net.greghaines.jesque.worker.WorkerEvent.JOB_EXECUTE
 @Slf4j
 class GrailsWorkerImpl extends WorkerPoolImpl {
 
-    GrailsApplication grailsApplication
-
-    GrailsWorkerImpl(GrailsApplication grailsApplication,
-                     final Config config,
-                     final Pool<Jedis> jedisPool,
+    GrailsWorkerImpl(final Config config,
                      final Collection<String> queues,
                      final Map<String, ? extends Class> jobTypes,
+                     final Pool<Jedis> jedisPool,
                      final NextQueueStrategy nextQueueStrategy) {
-        super(config, queues, new GrailsJesqueJobFactory(jobTypes, grailsApplication), jedisPool, nextQueueStrategy)
-
-        this.grailsApplication = grailsApplication
+        super(config, queues, new GrailsJesqueJobFactory(jobTypes), jedisPool, nextQueueStrategy)
     }
 
     @Override
