@@ -1,6 +1,6 @@
 package grails.plugins.jesque
 
-enum JesqueScheduleThreadState {
+enum JesqueSchedulerThreadState {
     New,
     Running,
     Stopped

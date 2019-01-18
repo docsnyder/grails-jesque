@@ -9,7 +9,7 @@ class JesqueSchedulerThreadService implements Runnable, DisposableBean {
 
     protected static String hostName
     protected static final Integer IDLE_WAIT_TIME = 10 * 1000
-    protected AtomicReference<JesqueScheduleThreadState> threadState = new AtomicReference(JesqueScheduleThreadState.New)
+    protected AtomicReference<JesqueSchedulerThreadState> threadState = new AtomicReference(JesqueSchedulerThreadState.New)
     protected Thread schedulerThread
     protected static Integer MAX_RETRY_ATTEMPTS = 120
     protected static Integer MAX_SLEEP_TIME_MS = 5 * 60 * 1000 //5 minutes
@@ -25,11 +25,11 @@ class JesqueSchedulerThreadService implements Runnable, DisposableBean {
     }
 
     public void run() {
-        if( !threadState.compareAndSet(JesqueScheduleThreadState.New, JesqueScheduleThreadState.Running)) {
-            throw new Exception("Cannot start scheduler thread, state was not the expected ${JesqueScheduleThreadState.New} state")
+        if( !threadState.compareAndSet(JesqueSchedulerThreadState.New, JesqueSchedulerThreadState.Running)) {
+            throw new Exception("Cannot start scheduler thread, state was not the expected ${JesqueSchedulerThreadState.New} state")
         }
 
-        while( threadState.get() == JesqueScheduleThreadState.Running ) {
+        while( threadState.get() == JesqueSchedulerThreadState.Running ) {
             withRetryUsingBackoff(MAX_RETRY_ATTEMPTS, MAX_SLEEP_TIME_MS) {
                 mainThreadLoop()
             }
@@ -47,7 +47,7 @@ class JesqueSchedulerThreadService implements Runnable, DisposableBean {
         DateTime findJobsUntil = new DateTime().plusMillis(IDLE_WAIT_TIME)
         Integer enqueueJobCount = jesqueSchedulerService.enqueueReadyJobs(findJobsUntil, getHostName())
 
-        if( enqueueJobCount == 0 && threadState.get() == JesqueScheduleThreadState.Running ) {
+        if( enqueueJobCount == 0 && threadState.get() == JesqueSchedulerThreadState.Running ) {
             Thread.sleep(IDLE_WAIT_TIME)
         }
     }
@@ -58,7 +58,7 @@ class JesqueSchedulerThreadService implements Runnable, DisposableBean {
         }
 
         log.info "Stopping the jesque scheduler thread"
-        threadState.set(JesqueScheduleThreadState.Stopped)
+        threadState.set(JesqueSchedulerThreadState.Stopped)
         try{
             schedulerThread.join(waitMilliseconds)
         } catch (InterruptedException ignore) {
@@ -86,14 +86,14 @@ class JesqueSchedulerThreadService implements Runnable, DisposableBean {
             } catch(Exception exception) {
                 log.error "Jesque scheduler exception, attempt $attempt of $MAX_RETRY_ATTEMPTS", exception
 
-                if( threadState.get() != JesqueScheduleThreadState.Running ) {
+                if( threadState.get() != JesqueSchedulerThreadState.Running ) {
                     log.info "Aborting retries because thread state is ${threadState.get()}"
                 } else if( attempt != MAX_RETRY_ATTEMPTS ) {
                     Double sleepTime = Math.min( MAX_SLEEP_TIME_MS, 500 + random.nextDouble() * Math.pow(2, attempt))
                     Thread.sleep(sleepTime.toLong())
                 } else {
                     log.error "Could not run scheduler thread after $MAX_RETRY_ATTEMPTS attempts, stopping for good"
-                    threadState.set(JesqueScheduleThreadState.Stopped)
+                    threadState.set(JesqueSchedulerThreadState.Stopped)
                 }
             }
         }
