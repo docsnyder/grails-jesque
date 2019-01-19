@@ -2,7 +2,8 @@ package ${packageName}
 
 class ${className}Job {
     static triggers = {
-        simple repeatInterval: 5000l // execute job once in 5 seconds
+        // execute job every 5 seconds
+        cron queueName: 'JobQueue', name: 'JobTrigger-1', cronExpression: '0/5 * * * * ? *', args: []
     }
 
     def perform() {
