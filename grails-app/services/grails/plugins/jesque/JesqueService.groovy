@@ -204,7 +204,8 @@ class JesqueService implements ApplicationListener<ContextClosedEvent>, Ordered 
             }
         }
 
-        Worker worker = (GrailsWorkerImpl) workerClass.newInstance(jesqueConfig, allQueues, jobTypes, redisPool, nextQueueStrategy)
+        def factory = new GrailsJesqueJobFactory(jobTypes)
+        Worker worker = (GrailsWorkerImpl) workerClass.newInstance(jesqueConfig, allQueues, factory, redisPool, nextQueueStrategy)
 
         def customListenerClass = grailsApplication.config.grails.jesque.custom.listener.clazz
         if (customListenerClass) {
