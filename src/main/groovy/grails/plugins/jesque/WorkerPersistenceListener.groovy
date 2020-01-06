@@ -1,13 +1,15 @@
 package grails.plugins.jesque
 
 import grails.persistence.support.PersistenceContextInterceptor
-import groovy.util.logging.Log
+import groovy.transform.CompileStatic
+import groovy.util.logging.Slf4j
 import net.greghaines.jesque.Job
 import net.greghaines.jesque.worker.Worker
 import net.greghaines.jesque.worker.WorkerEvent
 import net.greghaines.jesque.worker.WorkerListener
 
-@Log
+@Slf4j
+@CompileStatic
 class WorkerPersistenceListener implements WorkerListener {
 
     PersistenceContextInterceptor persistenceInterceptor
@@ -23,8 +25,6 @@ class WorkerPersistenceListener implements WorkerListener {
         if (persistenceInterceptor == null)
             throw new IllegalStateException("No persistenceInterceptor found");
 
-        log.fine("Binding session")
-
         if (!initiated) {
             persistenceInterceptor.init()
         }
@@ -32,23 +32,31 @@ class WorkerPersistenceListener implements WorkerListener {
     }
 
     private void unbindSession() {
-        if (initiated) {
-            if (autoFlush) {
-                persistenceInterceptor.flush()
-            }
-            persistenceInterceptor.destroy()
-            initiated = false
-        } else {
-            log.fine("persistenceInterceptor has never been initialised")
+        if (!initiated) return
+        persistenceInterceptor.destroy()
+        initiated = false
+    }
+
+    private void flushSession() {
+        if (!initiated) return
+        try {
+            persistenceInterceptor.flush()
+        } catch (Exception e) {
+            log.error "flushing persistence context failed", e
         }
     }
 
+
     @Override
     void onEvent(WorkerEvent workerEvent, Worker worker, String queue, Job job, Object runner, Object result, Throwable t) {
-        log.fine("Processing worker event ${workerEvent.name()}")
         if (workerEvent == WorkerEvent.JOB_EXECUTE) {
             initiated = bindSession()
-        } else if (workerEvent in [WorkerEvent.JOB_SUCCESS, WorkerEvent.JOB_FAILURE]) {
+        } else if (workerEvent == WorkerEvent.JOB_SUCCESS) {
+            if (autoFlush) {
+                flushSession()
+            }
+            unbindSession()
+        } else if (workerEvent == WorkerEvent.JOB_FAILURE) {
             unbindSession()
         }
     }
